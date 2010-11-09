@@ -2,6 +2,8 @@
 # coding=utf8
 #
 # Vkontakte audio links fetcher.
+# Copyright (C) 2010 Alexander Lopatin
+#
 # Usage: ./vkaudioget.py Metallica | mpc add
 #
 # This program is free software: you can redistribute it and/or modify
