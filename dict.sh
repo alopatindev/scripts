@@ -8,6 +8,8 @@
 # the Free Software Foundation, either version 3 of the License, or (at
 # your option) any later version.
 
+# TODO: show "did you mean" words if available
+
 STR=$(echo -n $@ | sed -e 's/ /%20/g')
 URL="http://www.google.com/dictionary?q=$STR\
 &hl=ru&langpair=en|ru&spell=1&oi=spell"
