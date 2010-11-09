@@ -17,3 +17,4 @@ lynx --source $URL |
     egrep 'span.*dct-..">.*(<\/span>|)$' |
     sed -e 's/<span class="dct-..">//g;s/<\/span>//g;s/&nbsp;/ /g' |
     egrep -v '(dct-elb|a href)'
+
