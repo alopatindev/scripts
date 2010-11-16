@@ -9,28 +9,21 @@
 # the Free Software Foundation, either version 3 of the License, or (at
 # your option) any later version.
 
-# FIXME: rewrite this code without those dirty hacks
-
 import urllib, urllib.parse, urllib.request
-import re
 
-def get_page():
+def request_text():
     page = urllib.request.urlopen("http://www.novgorod.ru/temperature/").read()
     page = page.decode("cp1251").split("\n")
     return page[page.index("<LI class=\"first\">Сейчас: <b>") + 1]
 
 def anti_obusfaction(text):
-    shit = list(re.search(r"&#([0-9]{2}?);", text).groups())
-    for i in range(len(shit)):
-        shit[i] = int(shit[i]) - 48
-
     # replacing "&#[two digits number];" with "[number - 48]"
     out = ""
     i = 0
     while i < len(text):
-        if i + 3 < len(text) and text[i] == "&" and text[i+1] == "#":
-            for j in str(shit.pop(0)):
-                out += j
+        if i + 3 < len(text) and text[i:i+2] == "&#":
+            number = int(text[i+2:i+4]) - 48
+            out += str(number)
             i += 5
         else:
             out += text[i]
@@ -38,4 +31,4 @@ def anti_obusfaction(text):
     return out
 
 if __name__ == "__main__":
-    print(anti_obusfaction(get_page()))
+    print(anti_obusfaction(request_text()))
