@@ -13,8 +13,8 @@ import urllib, urllib.parse, urllib.request
 
 def request_text():
     page = urllib.request.urlopen("http://www.novgorod.ru/temperature/").read()
-    page = page.decode("cp1251").split("\n")
-    return page[page.index("<LI class=\"first\">Сейчас: <b>") + 1]
+    lines = page.decode("cp1251").split("\n")
+    return lines[lines.index("<LI class=\"first\">Сейчас: <b>") + 1]
 
 def anti_obusfaction(text):
     # replacing "&#[two digits number];" with "[number - 48]"
