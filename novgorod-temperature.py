@@ -24,6 +24,7 @@ def anti_obusfaction(text):
     for i in range(len(shit)):
         shit[i] = int(shit[i]) - 48
 
+    # replacing "&#[two digits number];" with "[number - 48]"
     out = ""
     i = 0
     while i < len(text):
