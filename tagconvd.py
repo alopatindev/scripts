@@ -57,7 +57,7 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
              path = self.path
         if path[0] == '/':
             path = path[1:]
-        print(path)
+        # TODO: process 404 and other errors
 
         try:
             self.send_response(200)
@@ -65,12 +65,12 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
 
             f = urllib.request.urlopen(path)
-
             buf = f.read(BUFSIZE)
             tmp_filename = tempfile.mktemp(".mp3", "", TMP)
             tmp = open(tmp_filename, "wb")
             tmp.write(buf)
             tmp.close()
+            # TODO: work with ICY-info "StreamTitle=''"
             os.system("mid3iconv -e%s --remove-v1 '%s' >> /dev/null" %
                 (CHARSET, tmp_filename))
             tmp = open(tmp_filename, "rb")
