@@ -74,12 +74,14 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
             os.system("mid3iconv -e%s --remove-v1 '%s' >> /dev/null" %
                 (CHARSET, tmp_filename))
             tmp = open(tmp_filename, "rb")
-            self.wfile.write(tmp.read(BUFSIZE))
+            buf = tmp.read(BUFSIZE)
+            self.wfile.write(buf)
             tmp.close()
             os.remove(tmp_filename)
 
-            while True:
-                self.wfile.write(f.read(BUFSIZE))
+            while len(buf) > 0:
+                buf = f.read(BUFSIZE)
+                self.wfile.write(buf)
             self.wfile.close()
         except Exception as text:
             print(text)
@@ -109,11 +111,13 @@ def daemonize():
     os.dup2(log.fileno(), sys.stdout.fileno())
     os.dup2(log.fileno(), sys.stderr.fileno())
 
-    server = http.server.HTTPServer((HOST, PORT), ServerHandler)
-    try:
-        server.serve_forever()
-    except Exception as text:
-        print(text)
+    while True:
+        try:
+            server = http.server.HTTPServer((HOST, PORT), ServerHandler)
+            server.serve_forever()
+        except Exception as text:
+            server.close()
+            print(text)
 
 if __name__ == "__main__":
     daemonize()
