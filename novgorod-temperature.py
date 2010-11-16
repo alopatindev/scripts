@@ -14,29 +14,27 @@
 import urllib, urllib.parse, urllib.request
 import re
 
-page = urllib.request.urlopen("http://www.novgorod.ru/temperature/").read()
-page = page.decode("cp1251").split("\n")
-j = 0
-text = ""
-for i in page:
-    if i == "<LI class=\"first\">Сейчас: <b>":
-        text = urllib.parse.unquote(page[j+1])
-        break
-    j += 1
+def get_page():
+    page = urllib.request.urlopen("http://www.novgorod.ru/temperature/").read()
+    page = page.decode("cp1251").split("\n")
+    return page[page.index("<LI class=\"first\">Сейчас: <b>") + 1]
 
-shit = list(re.search(r"&#([0-9]{2}?);", text).groups())
-for i in range(len(shit)):
-    shit[i] = int(shit[i]) - 48
+def anti_obusfaction(text):
+    shit = list(re.search(r"&#([0-9]{2}?);", text).groups())
+    for i in range(len(shit)):
+        shit[i] = int(shit[i]) - 48
 
-out = ""
-i = 0
-while i < len(text):
-    if i + 3 < len(text) and text[i] == "&" and text[i+1] == "#":
-        for j in str(shit.pop(0)):
-            out += j
-        i += 5
-    else:
-        out += text[i]
-        i += 1
+    out = ""
+    i = 0
+    while i < len(text):
+        if i + 3 < len(text) and text[i] == "&" and text[i+1] == "#":
+            for j in str(shit.pop(0)):
+                out += j
+            i += 5
+        else:
+            out += text[i]
+            i += 1
+    return out
 
-print(out)
+if __name__ == "__main__":
+    print(anti_obusfaction(get_page()))
