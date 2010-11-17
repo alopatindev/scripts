@@ -81,7 +81,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
                     print(text)
 
             tmp = open(tmp_filename, "rb")
-            buf = tmp.read()
+            buf = tmp.read(BUFSIZE)
             self.wfile.write(buf)
             tmp.close()
             os.remove(tmp_filename)
