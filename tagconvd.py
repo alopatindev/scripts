@@ -30,16 +30,11 @@ HOST = "127.0.0.1"
 PORT = 8123
 
 def isunicode(text):
-    # FIXME: rewrite this stupid hack to support other languages
-    alphabet1 = range(ord(u'а'), ord(u'я'))
-    alphabet2 = range(ord(u'А'), ord(u'Я'))
-    uni = False
-    for i in text:
-        letter = ord(i)
-        if letter in alphabet1 or letter in alphabet2:
-            uni = True
-    return uni
-
+    try:
+        text.encode(CHARSET)
+        return True
+    except UnicodeEncodeError:
+        return False
 
 class ServerHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -63,21 +58,30 @@ class ServerHandler(SimpleHTTPRequestHandler):
             tmp.write(buf)
             tmp.close()
 
-            try:
-                id3 = mutagen.id3.ID3(tmp_filename)
-                tags = id3.pprint()
-                del id3
+            converted = False
+            while not converted:
+                try:
+                    id3 = mutagen.id3.ID3(tmp_filename)
+                    tags = id3.pprint()
+                    del id3
 
-                # FIXME: use mutagen to convert tags
-                # TODO: work with ICY-info "StreamTitle=''"
-                if not isunicode(tags):
-                    os.system("mid3iconv -q -e%s --remove-v1 '%s'" %
-                              (CHARSET, tmp_filename))
-            except Exception as text:
-                print(text)
+                    # FIXME: use mutagen to convert tags
+                    # TODO: work with ICY-info "StreamTitle=''"
+                    if not isunicode(tags):
+                        os.system("mid3iconv -q -e%s --remove-v1 '%s'" %
+                                  (CHARSET, tmp_filename))
+                    converted = True
+                except EOFError:
+                    buf = f.read(BUFSIZE)
+                    tmp = open(tmp_filename, "ab")
+                    tmp.write(buf)
+                    tmp.close()
+                except Exception as text:
+                    converted = True
+                    print(text)
 
             tmp = open(tmp_filename, "rb")
-            buf = tmp.read(BUFSIZE)
+            buf = tmp.read()
             self.wfile.write(buf)
             tmp.close()
             os.remove(tmp_filename)
