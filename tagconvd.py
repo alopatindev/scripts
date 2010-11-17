@@ -37,6 +37,13 @@ def isunicode(text):
         return False
 
 class ServerHandler(SimpleHTTPRequestHandler):
+    def print_text(self, text, response=200):
+        self.send_response(response)
+        self.send_header("Content-Type", "text/html")
+        self.end_headers()
+        self.wfile.write((response == 404 and "Not found") or text)
+        self.wfile.close()
+
     def do_GET(self):
         if self.path.find('?') != -1:
              path = self.path.split('?',1)[0]
@@ -44,14 +51,31 @@ class ServerHandler(SimpleHTTPRequestHandler):
              path = self.path
         if path[0] == '/':
             path = path[1:]
-        # TODO: process 404 and other errors
+
+        if path[:7] != "http://":
+            # FIXME: if HOST == "": get current hostname
+            self.print_text("""<h1>Welcome to tagconvd (Tag Converter Daemon)!
+<br/></h1>
+Add links, like «http://%s:%d/http://link/to/audiostream.mp3»
+to your favorite player's playlist to play the music via this deamon."""
+                % (HOST, PORT))
+            return
 
         try:
+            try:
+                f = urllib.urlopen(path)
+                response = f.getcode()
+            except Exception:
+                response = 404
+            if response != 200:
+                self.print_text("""Something wrong.
+Try the <a href="/">main</a> page.""", response)
+                return
+
             self.send_response(200)
             self.send_header("Content-Type", "audio/mpeg")
             self.end_headers()
 
-            f = urllib.urlopen(path)
             buf = f.read(BUFSIZE)
             tmp_filename = tempfile.mktemp(".mp3", "", TMP)
             tmp = open(tmp_filename, "wb")
