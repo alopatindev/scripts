@@ -1,5 +1,5 @@
-#!/usr/bin/python3
-# coding=utf8
+#!/usr/bin/python2
+# -*- coding: utf-8 -*-
 #
 # tagconvd is an mp3 proxy for audiostreams with wrong tags' charset.
 # Copyright (C) 2010 Alexander Lopatin
@@ -16,8 +16,10 @@ import time
 import os
 import sys
 import socket
-import http.server
-import urllib, urllib.request
+from SimpleHTTPServer import SimpleHTTPRequestHandler
+import BaseHTTPServer
+import urllib
+import mutagen, mutagen.id3
 import tempfile
 
 TMP = "/var/tmp"
@@ -27,29 +29,19 @@ CHARSET = "CP1251"
 HOST = "127.0.0.1"
 PORT = 8123
 
-class ServerHandler(http.server.SimpleHTTPRequestHandler):
-    ## FIXME: use log_message from http.server.BaseHTTPRequestHandler.log_message
-    ## and make it work!
-    #def __init__(self):
-    #    self.log_message("starting server on %s:%d", HOST, PORT)
+def isunicode(text):
+    # FIXME: rewrite this stupid hack to support other languages
+    alphabet1 = range(ord(u'а'), ord(u'я'))
+    alphabet2 = range(ord(u'А'), ord(u'Я'))
+    uni = False
+    for i in text:
+        letter = ord(i)
+        if letter in alphabet1 or letter in alphabet2:
+            uni = True
+    return uni
 
-    #def log_date_time_string(self):
-    #    now = time.time()
-    #    year, month, day, hh, mm, ss, x, y, z = time.localtime(now)
-    #    s = "%02d/%3s/%04d %02d:%02d:%02d" % (
-    #            day, self.monthname[month], year, hh, mm, ss)
-    #    return s
 
-    #def address_string(self):
-    #    host, port = self.client_address[:2]
-    #    return socket.getfqdn(host)
-
-    #def log_message(self, format, *args):
-    #    sys.stderr.write("%s - - [%s] %s\n" %
-    #                     (self.address_string(),
-    #                      self.log_date_time_string(),
-    #                      format % args))
-
+class ServerHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.find('?') != -1:
              path = self.path.split('?',1)[0]
@@ -64,15 +56,26 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Content-Type", "audio/mpeg")
             self.end_headers()
 
-            f = urllib.request.urlopen(path)
+            f = urllib.urlopen(path)
             buf = f.read(BUFSIZE)
             tmp_filename = tempfile.mktemp(".mp3", "", TMP)
             tmp = open(tmp_filename, "wb")
             tmp.write(buf)
             tmp.close()
-            # TODO: work with ICY-info "StreamTitle=''"
-            os.system("mid3iconv -e%s --remove-v1 '%s' >> /dev/null" %
-                (CHARSET, tmp_filename))
+
+            try:
+                id3 = mutagen.id3.ID3(tmp_filename)
+                tags = id3.pprint()
+                del id3
+
+                # FIXME: use mutagen to convert tags
+                # TODO: work with ICY-info "StreamTitle=''"
+                if not isunicode(tags):
+                    os.system("mid3iconv -q -e%s --remove-v1 '%s'" %
+                              (CHARSET, tmp_filename))
+            except Exception as text:
+                print(text)
+
             tmp = open(tmp_filename, "rb")
             buf = tmp.read(BUFSIZE)
             self.wfile.write(buf)
@@ -87,7 +90,6 @@ class ServerHandler(http.server.SimpleHTTPRequestHandler):
             print(text)
 
     def server_bind(self):
-        print("binding")
         # set SO_REUSEADDR (if available on this platform)
         if hasattr(socket, 'SOL_SOCKET') and hasattr(socket, 'SO_REUSEADDR'):
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -113,7 +115,7 @@ def daemonize():
 
     while True:
         try:
-            server = http.server.HTTPServer((HOST, PORT), ServerHandler)
+            server = BaseHTTPServer.HTTPServer((HOST, PORT), ServerHandler)
             server.serve_forever()
         except Exception as text:
             server.close()
