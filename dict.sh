@@ -13,7 +13,7 @@
 STR=$(echo -n $@ | sed -e 's/ /%20/g')
 URL="http://www.google.com/dictionary?q=$STR\
 &hl=ru&langpair=en|ru&spell=1&oi=spell"
-lynx --source $URL |
+wget -qO - $URL |
     egrep 'span.*dct-..">.*(<\/span>|)$' |
     sed -e 's/<span class="dct-..">//g;s/<\/span>//g;s/&nbsp;/ /g' |
     egrep -v '(dct-elb|a href)'
