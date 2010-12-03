@@ -2,8 +2,6 @@
 # coding=utf8
 #
 # Vkontakte audio links fetcher.
-# Copyright (C) 2010 Alexander Lopatin
-#
 # Usage: ./vkaudioget.py Metallica | mpc add
 #
 # This program is free software: you can redistribute it and/or modify
@@ -18,26 +16,40 @@ import sys
 import re
 import os
 
-def usage(): print("usage: %s 'artist - song' [page number] [to page number]" % sys.argv[0])
+def usage():
+    print("usage: %s 'artist - song' | \
+'http://vk.com/audio.php?gid=119501' [page number] [to page number]" %
+    sys.argv[0])
 
 def page(q, number, opener, titles):
     #operate(209145,1044,362847,'db5a6cba31',194);
     #http://cs1044.vkontakte.ru/u362847/audio/db5a6cba31.mp3
-    s = opener.open("http://vk.com/gsearch.php?section=audio&q=%s\
-&name=1&offset=%d" % (q, (number)*100)).readlines()
+    url = ((q[:7] == "http://" and q.replace("vkontakte.ru/", "vk.com/")) or
+    "http://vk.com/gsearch.php?section=audio&q=%s&name=1" %
+        urllib.parse.quote(q))
+    url += "&offset=%d" % (number * 100)
+    s = opener.open(url).readlines()
     j = 0
     for i in s:
         j += 1
         i = i.decode("cp1251")
         if i.find("return operate") != -1:
-            g = re.search(r"return operate\(\d*?,(\d*?),(\d*?),'([\da-f]*?)'",
+            try:
+                g = re.search(r"return operate\(\d*?,(\d*?),(\d*?),'([\da-f]*?)'",
                           i).groups()
-            title = re.search(
+                outurl = "http://cs%s.vkontakte.ru/u%s/audio/%s.mp3" % g
+                title = re.search(
 r"<span id=\"title\d*?\">(<a href='.*?'>|)(.*?)(</a>|)</span>",
 s[j+2].decode("cp1251")).group(2).lower()
-            if title not in titles:
+            except AttributeError:
+                g = re.search(r"return operate\(.*?,'(.*?)',", i)
+                #TODO: fetch title normally title
+                title = ""
+                outurl = g.groups()[0]
+            if title == "" or title not in titles:
+            #if title not in titles:
                 titles.append(title)
-                print("http://cs%s.vkontakte.ru/u%s/audio/%s.mp3" % g)
+                print(outurl)
                 #show title
                 #g = list(g); g.append(title.replace("'", '"'))
                 #print("wget 'http://cs%s.vkontakte.ru/u%s/audio/%s.mp3' -O '%s.mp3'" % tuple(g))
@@ -53,7 +65,7 @@ def login(opener, cookies):
 
 def main():
     try:
-        q = urllib.parse.quote(sys.argv[1])
+        q = sys.argv[1]
         p1 = ((len(sys.argv) > 2) and int(sys.argv[2])) or 1
         p2 = ((len(sys.argv) > 3) and int(sys.argv[3]) + 1) or p1 + 1
     except IndexError:
