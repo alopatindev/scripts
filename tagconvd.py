@@ -24,10 +24,13 @@ import tempfile
 
 TMP = "/var/tmp"
 LOG = "/var/log/tagconvd.log"
-BUFSIZE = 8192
+BUFSIZE = 8 * 1024  # 8 KiB
+MAXSPEED = 64 * 1024  # 64 KiB/s == 512 kbit/s
 CHARSET = "CP1251"
 HOST = "127.0.0.1"
 PORT = 8123
+
+# TODO: multithreading
 
 def isunicode(text):
     try:
@@ -112,6 +115,10 @@ Try the <a href="/">main</a> page.""", response)
 
             while len(buf) > 0:
                 buf = f.read(BUFSIZE)
+                try:
+                    time.sleep(1./float(MAXSPEED/BUFSIZE))
+                except:
+                    pass
                 self.wfile.write(buf)
             self.wfile.close()
         except Exception as text:
@@ -119,7 +126,7 @@ Try the <a href="/">main</a> page.""", response)
 
     def server_bind(self):
         # set SO_REUSEADDR (if available on this platform)
-        if hasattr(socket, 'SOL_SOCKET') and hasattr(socket, 'SO_REUSEADDR'):
+        if hasattr(socket, "SOL_SOCKET") and hasattr(socket, "SO_REUSEADDR"):
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         BaseHTTPServer.HTTPServer.server_bind(self)
