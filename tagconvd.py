@@ -114,9 +114,12 @@ Try the <a href="/">main</a> page.""", response)
             os.remove(tmp_filename)
 
             while len(buf) > 0:
+                start = time.time()
                 buf = f.read(BUFSIZE)
+                end = time.time()
                 try:
-                    time.sleep(1./float(MAXSPEED/BUFSIZE))
+                    pause = 1./float(MAXSPEED/BUFSIZE) - (end - start)
+                    time.sleep(pause)
                 except:
                     pass
                 self.wfile.write(buf)
