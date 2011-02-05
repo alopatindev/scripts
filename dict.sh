@@ -22,10 +22,11 @@ dict()
 if [[ $1 == '' ]]; then
     while :
     do
-        echo -n 'google dict: '
+        echo -n '> '
         read TEXT
         [[ $TEXT == '' ]] && break
         dict "${TEXT}"
+        echo
     done
 else
     dict $@
