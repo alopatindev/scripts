@@ -16,52 +16,78 @@ import sys
 import re
 import os
 
+url_value_regexp = re.compile(r"value=\"(.*?),.*?\"")
+title_regexp = re.compile(r"return false\">(.*?)</a></b> - <span class=\"title\">(<a href=\"\".*;return false;\">|)(.*?)(</a>|)</span>")
+title2_regexp = re.compile(r"<span id=\"title\d*?\">(<a href='.*?'>|)(.*?)(</a>|)</span>")
+operate_regexp = re.compile(r"return operate\(\d*?,(\d*?),(\d*?),'([\da-f]*?)'")
+operate2_regexp = re.compile(r"return operate\(.*?,'(.*?)',")
+
 def usage():
     print("usage: %s 'artist - song' | \
 'http://vk.com/audio.php?gid=119501' [page number] [to page number]" %
     sys.argv[0])
 
 def page(q, number, opener, titles):
-    #operate(209145,1044,362847,'db5a6cba31',194);
-    #http://cs1044.vkontakte.ru/u362847/audio/db5a6cba31.mp3
-    url = ((q[:7] == "http://" and q.replace("vkontakte.ru/", "vk.com/")) or
-    "http://vk.com/gsearch.php?section=audio&q=%s&name=1" %
-        urllib.parse.quote(q))
-    url += "&offset=%d" % (number * 100)
-    s = opener.open(url).readlines()
-    j = 0
-    for i in s:
-        j += 1
-        i = i.decode("cp1251")
-        if i.find("return operate") != -1:
-            try:
-                g = re.search(r"return operate\(\d*?,(\d*?),(\d*?),'([\da-f]*?)'",
-                          i).groups()
-                outurl = "http://cs%s.vkontakte.ru/u%s/audio/%s.mp3" % g
-                title = re.search(
-r"<span id=\"title\d*?\">(<a href='.*?'>|)(.*?)(</a>|)</span>",
-s[j+2].decode("cp1251")).group(2).lower()
-            except AttributeError:
-                g = re.search(r"return operate\(.*?,'(.*?)',", i)
-                #TODO: fetch title normally title
-                title = ""
-                outurl = g.groups()[0]
-            if title == "" or title not in titles:
-            #if title not in titles:
-                titles.append(title)
-                print(outurl)
-                #show title
-                #g = list(g); g.append(title.replace("'", '"'))
-                #print("wget 'http://cs%s.vkontakte.ru/u%s/audio/%s.mp3' -O '%s.mp3'" % tuple(g))
+    if q[:7] == "http://":
+        url = q.replace("vkontakte.ru/", "vk.com/")
+        s = opener.open(url).read().decode("cp1251")
+        for i in s.split('\n'):
+            if i.find("<input type=\"hidden\" id=\"audio_info") != -1:
+                try:
+                    last_url = url_value_regexp.search(i).group(1)
+                    if last_url[:7] != "http://":
+                        break
+                except: pass
+            if i.find("<div class=\"title_wrap\">") != -1:
+                try:
+                    title = title_regexp.search(i).group(2).lower()
+                    if title == "" or title not in titles:
+                        titles.append(title)
+                        print(last_url)
+                except: pass
+    else:
+        #operate(209145,1044,362847,'db5a6cba31',194);
+        #http://cs1044.vkontakte.ru/u362847/audio/db5a6cba31.mp3
+        url = "http://vk.com/gsearch.php?section=audio&q=%s&name=1&offset=%d" % \
+            (urllib.parse.quote(q), number * 100)
+        s = opener.open(url).readlines()
+        #for i in s: print (i.decode("cp1251"))
+        j = 0
+        for i in s:
+            j += 1
+            i = i.decode("cp1251")
+            if i.find("return operate") != -1:
+                try:
+                    g = operate_regexp.search(i).groups()
+                    outurl = "http://cs%s.vkontakte.ru/u%s/audio/%s.mp3" % g
+                    title = title2_regexp.search(s[j+2].decode("cp1251")).\
+                            group(2).lower()
+                except AttributeError:
+                    g = operate2_regexp.search(i)
+                    #TODO: fetch title normally
+                    title = ""
+                    outurl = g.groups()[0]
+                if title == "" or title not in titles:
+                    titles.append(title)
+                    print(outurl)
+                    #show title
+                    #g = list(g); g.append(title.replace("'", '"'))
+                    #print("wget 'http://cs%s.vkontakte.ru/u%s/audio/%s.mp3' -O '%s.mp3'" % tuple(g))
 
 def login(opener, cookies):
     cookie = os.environ["HOME"] + "/.vkcookies"
     if os.path.exists(cookie):
         cookies.load(cookie)
-    else:
-        data = { "email" : "b2629268@lhsdv.com", "pass" : "mastermind123q" }
+
+    if opener.open("http://vk.com/groups.php").read().decode("cp1251").\
+        find("<title>В Контакте | Вход</title>") != -1:
+        data = { "email" : "", "pass" : "" }
         opener.open("http://vk.com/login.php", urllib.parse.urlencode(data))
         cookies.save(cookie)
+
+    return opener.open("http://vk.com/groups.php").read().decode("cp1251").\
+        find("<title>В Контакте | Вход</title>") == -1
+
 
 def main():
     try:
@@ -77,7 +103,9 @@ def main():
         urllib.request.HTTPCookieProcessor(cookies),
     )
 
-    login(opener, cookies)
+    if not login(opener, cookies):
+        print("Login failed :(")
+        return 1
 
     titles = []
 
