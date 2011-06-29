@@ -16,6 +16,9 @@ import sys
 import re
 import os
 
+EMAIL=""
+PASSWORD=""
+
 url_value_regexp = re.compile(r"value=\"(.*?),.*?\"")
 title_regexp = re.compile(r"return false\">(.*?)</a></b> - <span class=\"title\">(<a href=\"\".*;return false;\">|)(.*?)(</a>|)</span>")
 title2_regexp = re.compile(r"<span id=\"title\d*?\">(<a href='.*?'>|)(.*?)(</a>|)</span>")
@@ -81,7 +84,7 @@ def login(opener, cookies):
 
     if opener.open("http://vk.com/groups.php").read().decode("cp1251").\
         find("<title>В Контакте | Вход</title>") != -1:
-        data = { "email" : "", "pass" : "" }
+        data = { "email" : EMAIL, "pass" : PASSWORD }
         opener.open("http://vk.com/login.php", urllib.parse.urlencode(data))
         cookies.save(cookie)
 
@@ -114,4 +117,5 @@ def main():
 
     return 0
 
-sys.exit(main())
+if __name__ == "__main__":
+    sys.exit(main())
