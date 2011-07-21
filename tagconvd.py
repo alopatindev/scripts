@@ -19,7 +19,7 @@ import socket
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 import BaseHTTPServer
 import urllib
-import mutagen, mutagen.id3
+#import mutagen, mutagen.id3
 import tempfile
 
 TMP = "/var/tmp"
@@ -88,9 +88,9 @@ Try the <a href="/">main</a> page.""", response)
             converted = False
             while not converted:
                 try:
-                    id3 = mutagen.id3.ID3(tmp_filename)
-                    tags = id3.pprint()
-                    del id3
+                    #id3 = mutagen.id3.ID3(tmp_filename)
+                    #tags = id3.pprint()
+                    #del id3
 
                     # FIXME: use mutagen to convert tags
                     # TODO: work with ICY-info "StreamTitle=''"
