@@ -1,5 +1,7 @@
 #!/bin/bash
 # shows temperature in Velikij Novgorod town
 
-curl --connect-timeout 5 -s http://www.novgorod.ru/temperature/ \
-    | iconv -f cp1251 | grep -io "сейчас:\ .*C" | cut -d' ' -f2
+wget -qO - --timeout=5 http://www.novgorod.ru/weather \
+    | iconv -f cp1251 \
+    | grep -io 'Фактическая</td><td>.* °C</td>' \
+    | sed 's/Фактическая<\/td><td>//g;s/<\/td>//g'
