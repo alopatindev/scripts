@@ -22,3 +22,4 @@ done
 echo
 echo -n 'Total:  '
 human_len $total
+echo
