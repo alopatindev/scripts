@@ -11,7 +11,7 @@ human_len () {
 
 total=0
 for i in "$@"; do
-    LEN=$(mplayer -vo null -ao null -frames 0 -identify "${i}" \
+    LEN=$(mplayer -vo null -ao null -frames 0 -identify "${i}" 2>>/dev/null \
         | grep ID_LENGTH | sed 's/ID_LENGTH=//')
 
     human_len $LEN
