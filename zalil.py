@@ -19,6 +19,8 @@ cookies = cookielib.MozillaCookieJar()
 opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookies),
                               MultipartPostHandler.MultipartPostHandler)
 #urllib2.install_opener(opener)
-params = { "file" : open(sys.argv[1], "rb") }
+params = {
+    "file": open(sys.argv[1], "rb")
+}
 text = opener.open("http://zalil.ru/upload/", params).read().decode('cp1251')
 print text.split('<div align="center">')[1].split('<')[0]
