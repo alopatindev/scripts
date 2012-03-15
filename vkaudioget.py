@@ -16,7 +16,7 @@ import sys
 import re
 import os
 
-EMAIL=""
+LOGIN=""
 PASSWORD=""
 
 url_value_regexp = re.compile(r"value=\"(.*?),.*?\"")
@@ -82,14 +82,30 @@ def login(opener, cookies):
     if os.path.exists(cookie):
         cookies.load(cookie)
 
-    if opener.open("http://vk.com/groups.php").read().decode("cp1251").\
-        find("<title>В Контакте | Вход</title>") != -1:
-        data = { "email" : EMAIL, "pass" : PASSWORD }
-        opener.open("http://vk.com/login.php", urllib.parse.urlencode(data))
+    data = { "email" : LOGIN, "pass" : PASSWORD }
+    text = ""
+    try:
+        text = opener.open("http://vk.com/groups.php").read().decode("cp1251")
+    except urllib.error.HTTPError as t:
+        if t.geturl().find("login.php") != -1:
+            url = "http://vk.com/" + t.geturl()
+            try:
+                text = opener.open(url).read().decode("cp1251")
+            except urllib.error.HTTPError as t:
+                pass
+            cookies.save(cookie)
+
+    if text.find("<title>Вход</title>") != -1:
+        try:
+            opener.open("http://vk.com/login.php", urllib.parse.urlencode(data))
+        except urllib.error.HTTPError as t:
+            url = "http://vk.com/" + t.geturl()
+            opener.open(url)
         cookies.save(cookie)
 
-    return opener.open("http://vk.com/groups.php").read().decode("cp1251").\
-        find("<title>В Контакте | Вход</title>") == -1
+    #return opener.open("http://vk.com/groups.php").read().decode("cp1251").\
+    #    find("<title>Вход</title>") == -1
+    return True
 
 
 def main():
@@ -105,6 +121,9 @@ def main():
     opener = urllib.request.build_opener(
         urllib.request.HTTPCookieProcessor(cookies),
     )
+    #urllib.request.FancyURLopener(),
+    #opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+    opener.addheaders = [('User-agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.2 (KHTML, like Gecko) Chrome/15.0.874.121 Safari/535.2')]
 
     if not login(opener, cookies):
         print("Login failed :(")
