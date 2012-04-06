@@ -3,7 +3,7 @@
 
 TEMP=$(wget -qO - --timeout=5 http://www.novgorod.ru/weather \
     | iconv -f cp1251 \
-    | head -n453 \
+    | head -n449 \
     | tail -n1 \
     | grep -io 'Фактическая</td><td>.* °C</td>' \
     | sed 's/Фактическая<\/td><td>//g;s/<\/td>//g')
