@@ -17,7 +17,7 @@ ACCESS_TOKEN=$(wget -qO - "https://avosapi.delicious.com/api/v1/oauth/token" --p
 echo " ok"
 
 echo -n "fetching bookmarks..."
-URL=$(wget -qO - "https://api.delicious.com/v1/posts/all?tag=linux" --header "Authorization: Bearer ${ACCESS_TOKEN}" \
+URL=$(wget -qO - "https://api.delicious.com/v1/posts/all" --header "Authorization: Bearer ${ACCESS_TOKEN}" \
     | sed 's!href="!\n!g' \
     | egrep --color=no '^http' \
     | sed 's!" private=.*!!g' \
